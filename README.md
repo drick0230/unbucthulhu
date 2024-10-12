@@ -17,7 +17,10 @@ conan install . -c tools.system.package_manager:mode=install -c tools.system.pac
 ## Compilation et exécution
 
 ```SH
+conan install . -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --profile drick0230_unbucthulhu
+source ./build/Release/generators/conanbuild.sh
 cmake --preset conan-release
 cmake --build ./build/Release
+source ./build/Release/generators/deactivate_conanbuild.sh
 ./build/Release/unbucthulhu
 ```
