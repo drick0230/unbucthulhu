@@ -10,7 +10,7 @@ Puisque certaines dépendances ne sont pas disponible sur les versions plus réc
 ```SH
 sudo dnf install conan
 conan profile detect
-sed -Ei 's/(compiler.version)=.*$/\1=11/' $(conan profile path default)
+sed -Ei 's/(compiler.version)=.*$/\1=11/' $(conan profile path drick0230_unbucthulhu)
 conan install . -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --profile drick0230_unbucthulhu
 ```
 
