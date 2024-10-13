@@ -12,6 +12,6 @@ Pour plus de détails, voir les répertoires des différents sous-projets.
 
 ## Structure du projet
 
-- `./client/`: Répertoire du projet du client du jeu.
-- `./server/`: Répertoire du projet du serveur du jeu.
-- `./common/`: Répertoire des sources communes aux projets.
+- [./client/](./client/): Répertoire du projet du client du jeu.
+- [./server/](./server/): Répertoire du projet du serveur du jeu.
+- [./common/](./common/): Répertoire des sources communes aux projets.
