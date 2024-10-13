@@ -14,13 +14,32 @@ sed -Ei 's/(compiler.version)=.*$/\1=11/' $(conan profile path drick0230_unbucth
 conan install . -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --profile drick0230_unbucthulhu
 ```
 
-## Compilation et exécution
+## Compilation
+
+Le projet peut être compilé avec Conan.
+Pour ce faire, il suffit d'exécuter la commande suivante:
+
 
 ```SH
-conan install . -c tools.system.package_manager:mode=install -c tools.system.package_manager:sudo=True --profile drick0230_unbucthulhu
-source ./build/Release/generators/conanbuild.sh
-cmake --preset conan-release
-cmake --build ./build/Release
-source ./build/Release/generators/deactivate_conanbuild.sh
-./build/Release/unbucthulhu
+conan build . --profile drick0230_unbucthulhu
+```
+
+Cela va générer un exécutable dans le dossier ciblé par l'outil de génération utilisé.
+Par exemple, avec CMake sur Fedora, l'exécutable se trouve à `./build/Release/unbucthulhu`.
+
+## Création du paquet Conan
+
+Le projet peut aussi être générer sous formes de paquet Conan.
+La commande suivante crée un paquet Conan à partir du projet et l'ajoute au cache de Conan.
+À noter que cela exécute aussi les tests du paquet, incluant l'éxécution de celui-ci.
+C'est donc une command pratique pour compiler et éxécuter le code par la suite.
+
+```SH
+conan create . --profile drick0230_unbucthulhu
+```
+
+Pour afficher les paquets du projet disponibles sur votre machine, il suffit d'exécuter:
+
+```SH
+conan list unbucthulhu
 ```

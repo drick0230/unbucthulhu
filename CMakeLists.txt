@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.15)
-project(unbucthulhu)
+project(unbucthulhu CXX)
 
-find_package(SFML 2.5.1 REQUIRED COMPONENTS Graphics Window System)
+find_package(SFML CONFIG REQUIRED)
 
-message("Building with CMake version: ${CMAKE_VERSION}")
 
-add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} ${SFML_LIBRARIES})
+add_executable(unbucthulhu src/main.cpp)
+
+target_link_libraries(unbucthulhu PRIVATE sfml::sfml)
+
+
+install(TARGETS unbucthulhu DESTINATION "."
+        RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        )

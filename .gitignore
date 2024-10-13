@@ -2,3 +2,5 @@ build
 CMakeUserPresets.json
 CMakeFiles
 CMakeCache.txt
+test_package/**
+!test_package/conanfile.py
