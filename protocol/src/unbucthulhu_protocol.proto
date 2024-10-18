@@ -2,23 +2,30 @@ edition = "2023";
 
 package unbucthulhu_protocol;
 
-// Game info send to clients.
-message GameInfo {
-    message Entity {
-        int64 posY = 1;
-        int64 posX = 2;
-        string imgPath = 3;
+message Packet {
+    // Game info send to clients.
+    message GameInfo {
+        message Entity {
+            int64 posY = 1;
+            int64 posX = 2;
+            string imgPath = 3;
+        }
+
+        repeated Entity entities = 1;
     }
 
-    repeated Entity entities = 1;
-}
+    // User inputs send to server.
+    message UserInputs {
+        message UserInput {
+            string key = 1;
+            uint64 timeNanosecond = 2;
+        }
 
-// User inputs send to server.
-message UserInputs {
-    message UserInput {
-        string key = 1;
-        uint64 timeNanosecond = 2;
+        repeated UserInput userInputs = 1;
     }
 
-    repeated UserInput userInputs = 1;
+    oneof message {
+        GameInfo gameInfo = 1;
+        UserInputs userInputs = 2;
+    }
 }
