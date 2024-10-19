@@ -17,7 +17,7 @@ public:
     NetworkTask() : thread(&NetworkTask::run, this) {}
     ~NetworkTask()
     {
-        this->CancelWait()
+        this->CancelWait();
     }
 
     /**
@@ -34,6 +34,7 @@ public:
     void CancelWait()
     {
         isRunning = false;
+        socket.disconnect();
         this->thread.wait();
     }
 
@@ -55,14 +56,16 @@ public:
     }
 
 private:
+    bool isConnected;
     bool isRunning;
     sf::Thread thread;
 
     std::vector<unbucthulhu_protocol::Packet::GameInfo::Entity> entities;
     std::mutex entitiesMutex;
 
-    void
-    treat_packet(sf::Packet &sfmlPacket)
+    sf::TcpSocket socket;
+
+    void treat_packet(sf::Packet &sfmlPacket)
     {
         unbucthulhu_protocol::Packet packet;
         packet.ParseFromArray(sfmlPacket.getData(), sfmlPacket.getDataSize());
@@ -85,65 +88,30 @@ private:
 
     void run()
     {
-        this->isRunning = true;
-        // Create a socket to listen to new connections
-        sf::TcpListener listener;
-        listener.listen(55001);
-
-        // Create a list to store the future clients
-        std::list<sf::TcpSocket *> clients;
-
-        // Create a selector
-        sf::SocketSelector selector;
-
-        // Add the listener to the selector
-        selector.add(listener);
-
-        // Endless loop that waits for new connections
-        while (this->isRunning)
+        isConnected = false;
+        const std::string serverIp = "127.0.0.1";
+        const unsigned short serverPort = 55003;
+        while (this->socket.connect(serverIp, serverPort, sf::seconds(5)) != sf::Socket::Status::Done)
         {
-            // Make the selector wait for data on any socket
-            if (selector.wait())
-            {
-                // Test the listener
-                if (selector.isReady(listener))
-                {
-                    // The listener is ready: there is a pending connection
-                    sf::TcpSocket *client = new sf::TcpSocket;
-                    if (listener.accept(*client) == sf::Socket::Done)
-                    {
-                        // Add the new client to the clients list
-                        clients.push_back(client);
-
-                        // Add the new client to the selector so that we will
-                        // be notified when he sends something
-                        selector.add(*client);
-                    }
-                    else
-                    {
-                        // Error, we won't get a new connection, delete the socket
-                        delete client;
-                    }
-                }
-                else
-                {
-                    // The listener socket is not ready, test all other sockets (the clients)
-                    for (std::list<sf::TcpSocket *>::iterator it = clients.begin(); it != clients.end(); ++it)
-                    {
-                        sf::TcpSocket &client = **it;
-                        if (selector.isReady(client))
-                        {
-                            // The client has sent some data, we can receive it
-                            sf::Packet packet;
-                            if (client.receive(packet) == sf::Socket::Done)
-                            {
-                                this->treat_packet(packet);
-                            }
-                        }
-                    }
-                }
-            }
+            std::cout << "Connection to " << serverIp << ":" << serverPort << " failed. Retrying in 5 seconds...";
+            sf::sleep(sf::seconds(5));
         }
+
+        isConnected = true;
+
+        while (isConnected)
+        {
+
+            char buffer[128];
+            std::size_t received = 0;
+            if (socket.receive(buffer, sizeof(buffer), received) != sf::Socket::Status::Done)
+            {
+                isConnected = false;
+            }
+
+            std::cout << "Received: " << buffer << std::endl;
+        }
+        socket.disconnect();
     }
 };
 
@@ -167,30 +135,30 @@ int main()
             if (event.type == sf::Event::Closed)
                 window.close();
         }
-
-        entitiesSprites.clear();
-        auto entities = networkTask.get_entities();
-        for (auto entity : entities)
-        {
-            try
-            {
-                entitiesSprites.push_back(sf::Sprite(sf::Texture(textureLibrary.at(entity.imgpath())), sf::IntRect(entity.posx(), entity.posy(), WIDTH, HEIGHT)));
-            }
-            catch (std::out_of_range)
-            {
-                rectanglesToDraw.push_back(sf::RectangleShape(sf::Vector2f(WIDTH, HEIGHT)));
-            }
-        }
-
+        /*
+                entitiesSprites.clear();
+                auto entities = networkTask.get_entities();
+                for (auto entity : entities)
+                {
+                    try
+                    {
+                        entitiesSprites.push_back(sf::Sprite(sf::Texture(textureLibrary.at(entity.imgpath())), sf::IntRect(entity.posx(), entity.posy(), WIDTH, HEIGHT)));
+                    }
+                    catch (std::out_of_range)
+                    {
+                        rectanglesToDraw.push_back(sf::RectangleShape(sf::Vector2f(WIDTH, HEIGHT)));
+                    }
+                }
+         */
         window.clear();
-        for (auto rectangle : rectanglesToDraw)
-        {
-            window.draw(rectangle);
-        }
-        for (auto sprite : entitiesSprites)
-        {
-            window.draw(sprite);
-        }
+        /*   for (auto rectangle : rectanglesToDraw)
+          {
+              window.draw(rectangle);
+          }
+          for (auto sprite : entitiesSprites)
+          {
+              window.draw(sprite);
+          } */
         window.draw(shape);
         window.display();
     }

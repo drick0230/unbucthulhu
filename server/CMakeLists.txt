@@ -3,10 +3,11 @@ cmake_minimum_required(VERSION 3.15)
 project(${CMAKE_PROJECT_NAME} CXX)
 
 find_package(SFML CONFIG REQUIRED)
+find_package(unbucthulhu_protocol CONFIG REQUIRED)
 
 add_executable(${CMAKE_PROJECT_NAME} src/main.cpp)
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE sfml::sfml)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE sfml::sfml unbucthulhu_protocol::unbucthulhu_protocol)
 
 install(TARGETS ${CMAKE_PROJECT_NAME} DESTINATION "."
         RUNTIME DESTINATION bin

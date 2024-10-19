@@ -3,6 +3,11 @@ Recette Conan pour le client du jeu Unbucthulhu.
 """
 
 import conan
+import conan.tools
+import conan.tools.files
+import os
+import shutil
+
 
 class UnbucthulhuRecipe(conan.ConanFile):
     """
@@ -10,6 +15,7 @@ class UnbucthulhuRecipe(conan.ConanFile):
     C'est ici que l'on retrouve l'information relative au projet et
     le code responsable de sa compilation.
     """
+
     name = "unbucthulhu_server"
     version = "0.0.0"
     package_type = "application"
@@ -18,16 +24,15 @@ class UnbucthulhuRecipe(conan.ConanFile):
     license = "MIT"
     author = "drick0230 61423988+drick0230@users.noreply.github.com"
     url = "https://github.com/drick0230/unbucthulhu/"
-    description = 'Serveur du jeu vidéo Unbucthulhu.'
-    topics = ("game", )
+    description = "Serveur du jeu vidéo Unbucthulhu."
+    topics = ("game",)
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "src/*"
+    exports_sources = "CMakeLists.txt", "src/*", "assets/**"
     cmake_variables = dict([("CMAKE_PROJECT_NAME", name)])
-
 
     def layout(self):
         """
@@ -55,6 +60,10 @@ class UnbucthulhuRecipe(conan.ConanFile):
         cmake = conan.tools.cmake.CMake(self)
         cmake.configure(variables=self.cmake_variables)
         cmake.build()
+        shutil.copytree(
+            os.path.join(self.source_folder, "assets"),
+            os.path.join(self.build_folder, "assets"),
+        )
 
     def package(self):
         """
@@ -63,9 +72,14 @@ class UnbucthulhuRecipe(conan.ConanFile):
         """
         cmake = conan.tools.cmake.CMake(self)
         cmake.install()
+        shutil.copytree(
+            os.path.join(self.source_folder, "assets"),
+            os.path.join(self.package_folder, "assets"),
+        )
 
     def requirements(self):
         """
         Définit les dépendances du projet.
         """
         self.requires("sfml/2.6.1")
+        self.requires("unbucthulhu_protocol/0.0.0")

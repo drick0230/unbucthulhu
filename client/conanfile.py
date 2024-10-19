@@ -28,7 +28,6 @@ class UnbucthulhuRecipe(conan.ConanFile):
     exports_sources = "CMakeLists.txt", "src/*"
     cmake_variables = dict([("CMAKE_PROJECT_NAME", name)])
 
-
     def layout(self):
         """
         Définit la structure de dossier du projet.
@@ -69,3 +68,4 @@ class UnbucthulhuRecipe(conan.ConanFile):
         Définit les dépendances du projet.
         """
         self.requires("sfml/2.6.1")
+        self.requires("unbucthulhu_protocol/0.0.0")
