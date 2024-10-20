@@ -37,21 +37,19 @@ public:
         this->thread.wait();
     }
 
-    /**
-     * Get a copy of the latest entities received.
-     */
-    std::vector<unbucthulhu_protocol::Packet::GameInfo::Entity> &get_entities()
+    void send_packet_to_clients(const unbucthulhu_protocol::Packet &packet)
     {
-        std::vector<unbucthulhu_protocol::Packet::GameInfo::Entity> entities;
+        std::string packetArray;
+        packet.SerializeToString(&packetArray);
 
-        this->entitiesMutex.lock();
-        for (const auto entity : this->entities)
+        sf::Packet sfmlPacket;
+        sfmlPacket << packetArray;
+        this->clientsMutex.lock();
+        for (auto client : this->clients)
         {
-            entities.push_back(entity);
+            client->send(sfmlPacket);
         }
-        this->entitiesMutex.unlock();
-
-        return entities;
+        this->clientsMutex.unlock();
     }
 
 private:
@@ -63,6 +61,7 @@ private:
 
     sf::TcpListener listener;
     std::list<sf::TcpSocket *> clients;
+    std::mutex clientsMutex;
     sf::SocketSelector selector;
 
     void
@@ -107,7 +106,9 @@ private:
                     if (listener.accept(*client) == sf::Socket::Done)
                     {
                         // Add the new client to the clients list
+                        this->clientsMutex.lock();
                         clients.push_back(client);
+                        this->clientsMutex.unlock();
 
                         // Add the new client to the selector so that we will
                         // be notified when he sends something
@@ -123,34 +124,43 @@ private:
                 else
                 {
                     // The listener socket is not ready, test all other sockets (the clients)
-                    for (std::list<sf::TcpSocket *>::iterator it = clients.begin(); it != clients.end(); ++it)
+                    this->clientsMutex.lock();
+                    for (auto client : this->clients)
                     {
-                        sf::TcpSocket &client = **it;
-                        if (selector.isReady(client))
+
+                        if (selector.isReady(*client))
                         {
                             // The client has sent some data, we can receive it
                             sf::Packet packet;
-                            if (client.receive(packet) == sf::Socket::Done)
+                            if (client->receive(packet) == sf::Socket::Done)
                             {
                                 this->treat_packet(packet);
                             }
                         }
                     }
+                    this->clientsMutex.unlock();
                 }
             }
         }
 
+        this->clientsMutex.lock();
         for (auto client : this->clients)
         {
             client->disconnect();
         }
+        this->clientsMutex.unlock();
         this->listener.close();
     }
 };
 
 int main()
 {
-    std::string input;
+    unbucthulhu_protocol::Packet gameInfoPacket;
+    unbucthulhu_protocol::Packet::GameInfo *gameInfo = gameInfoPacket.mutable_gameinfo();
+    auto newEntity = gameInfo->add_entities();
+    newEntity->set_imgpath("notfound");
+    newEntity->set_posx(100);
+    newEntity->set_posy(150);
     NetworkTask networkTask;
     networkTask.Launch();
 
@@ -158,7 +168,8 @@ int main()
 
     while (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
     {
-        sf::sleep(sf::milliseconds(100));
+        networkTask.send_packet_to_clients(gameInfoPacket);
+        sf::sleep(sf::milliseconds(1000));
     }
 
     networkTask.CancelWait();
