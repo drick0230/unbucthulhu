@@ -2,7 +2,12 @@
 Recette Conan pour le protocole du jeu Unbucthulhu.
 """
 
+import shutil
 import conan
+import os
+
+import conan.tools
+import conan.tools.files
 
 
 class UnbuchtulhuProtocolRecipe(conan.ConanFile):
@@ -14,7 +19,7 @@ class UnbuchtulhuProtocolRecipe(conan.ConanFile):
 
     name = "unbucthulhu_protocol"
     version = "0.0.0"
-    package_type = "library"
+    package_type = "header-library"
 
     # Optional metadata
     license = "MIT"
@@ -23,21 +28,8 @@ class UnbuchtulhuProtocolRecipe(conan.ConanFile):
     description = 'Projet du protocole du jeu vidéo Unbucthulhu.'
     topics = ("game",)
 
-    # Binary configuration
-    settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
-
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "src/*"
-
-    def config_options(self):
-        if self.settings.os == "Windows":
-            self.options.rm_safe("fPIC")
-
-    def configure(self):
-        if self.options.shared:
-            self.options.rm_safe("fPIC")
+    exports_sources = "src/*"
 
     def layout(self):
         """
@@ -45,43 +37,32 @@ class UnbuchtulhuProtocolRecipe(conan.ConanFile):
         Par exemple, l'emplacement des sources, du fichier compilé,
         des configurations du générateur, etc.
         """
-        conan.tools.cmake.cmake_layout(self)
-
-    def generate(self):
-        """
-        Définit les instructions pour générer les fichiers
-        nécéssaires pour compilé le projet.
-        """
-        deps = conan.tools.cmake.CMakeDeps(self)
-        deps.generate()
-        tc = conan.tools.cmake.CMakeToolchain(self)
-        tc.generate()
+        self.folders.source = "./"
+        self.folders.build = "./build/release"
+        self.folders.generators = os.path.join(self.folders.build, "generators")
 
     def build(self):
         """
         Définit les instructions pour compilé
         le projet.
         """
-        cmake = conan.tools.cmake.CMake(self)
-
-        # Variable used to propagate the project's name.
-        cmake.configure(variables=dict([("CMAKE_PROJECT_NAME", self.name)]))
-        cmake.build()
-
-    def package(self):
-        """
-        Définit les fichiers à transférer du dossier de sortie (build folder)
-        vers celui du paquet Conan généré.
-        """
-        cmake = conan.tools.cmake.CMake(self)
-        cmake.install()
+        flatc = self.dependencies["flatbuffers"].cpp_info.bindirs[0] + "/flatc"
+        schema_file = os.path.join(self.source_folder, "src/unbucthulhu_protocol.fbs")
+        self.run(
+            f"{flatc} --cpp --no-includes --reflect-names -o {self.build_folder} {schema_file}"
+        )
 
     def requirements(self):
         """
         Définit les dépendances du projet.
         """
-        self.requires("protobuf/5.27.0", transitive_headers=True)
-        self.tool_requires("protobuf/5.27.0")
+        self.requires("flatbuffers/24.3.25", transitive_headers=True)
+        self.tool_requires("flatbuffers/24.3.25")
+
+    def package(self):
+        conan.tools.files.copy(
+            self, "*.h", self.build_folder, os.path.join(self.package_folder, "include")
+        )
 
     def package_info(self):
         """

@@ -1,0 +1,32 @@
+namespace UnbucthulhuProtocol;
+
+table Entity {
+    pos_y:int64;
+    pos_x:int64;
+    img_path:string;
+}
+
+table GameInfo {
+    entities:[Entity];
+
+}
+
+enum Action : uint64 {
+    None = 0,
+    MoveUp,
+    MoveDown,
+    MoveLeft,
+    MoveRight
+}
+
+table UserInput {
+    action:Action;
+    time_nanosecond:uint64;
+}
+
+table Packet {
+    game_info: GameInfo;
+    user_inputs: [UserInput];
+}
+
+root_type Packet;
